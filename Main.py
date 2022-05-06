@@ -127,7 +127,8 @@ def SaveFile(fileName):
     <event category="Interaction" time="26/04/22 15:15:35.739"> File.SaveAs.IO={SavingPath}</event>
     </document>""")
     f.close()
-    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat"])
+    PathToSaveMacro = rf'"{WorkingPath}\PsMacros\SaveFile.psmacro"'
+    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat"], PathToSaveMacro) #Test this
     #time.sleep(3) probably not needed
 
 def WriteLogFile(ChannelName, Motor1_mid, Motor2_mid):

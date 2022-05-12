@@ -191,6 +191,4 @@ for index, channel in enumerate(channel_list):
 
 
 
-##TO DO: combine Set Position and Move, (make pandas array for all Positions, numpy arrange, numpy to list,)
-
 #Include writing a log

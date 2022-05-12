@@ -1,2 +1,3 @@
-@echo off
-Picoscope /a "C:\Users\Admin\OneDrive - ai-quanton GmbH\LabLine Projekt\Code\Project MV\PsMacros\SaveFile.psmacro"
+@echo off 
+set message=%1
+PicoScope /a %message%

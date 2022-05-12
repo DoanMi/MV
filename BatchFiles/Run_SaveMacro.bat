@@ -1,3 +1,3 @@
-@echo off
-set arg1 = %1
-Picoscope /a %arg1%
+@echo off 
+set message=%1
+PicoScope /a %message%

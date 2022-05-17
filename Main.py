@@ -167,7 +167,7 @@ with serial.Serial() as ser:
     ser.port = 'COM4'
     ser.timeout = 1
 
-channel_list = ["A"]
+channel_list = ["A", "B", "C", "D"]
 
 Motor1Values = []
 Motor2Values = []

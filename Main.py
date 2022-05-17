@@ -5,13 +5,9 @@ import subprocess as sb
 import numpy as np
 import pandas as pd
 import pathlib 
+import serial.tools.list_ports
 
-WorkingPath = pathlib.Path(__file__).parent.resolve()
 
-with serial.Serial() as ser:
-    ser.baudrate = 115200
-    ser.port = 'COM4'
-    ser.timeout = 1
 
 def readInputPins():
     ser.open()
@@ -67,9 +63,9 @@ def setPositioningMode(Motor):
     message = f"#{Motor}p2\r"
     ser.write(message.encode())
     time.sleep(0.1)
-    data = str(ser.read(10))
+    #data = str(ser.read(10))
     #print("Received: ", data)
-    time.sleep(0.1)
+    #time.sleep(0.1)
     ser.close()
 
 def getPosition(Motor):
@@ -127,12 +123,13 @@ def SaveFile(fileName):
     <event category="Interaction" time="26/04/22 15:15:35.739"> File.SaveAs.IO={SavingPath}</event>
     </document>""")
     f.close()
-    PathToSaveMacro = rf'"{WorkingPath}\PsMacros\SaveFile.psmacro"'
-    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat"], PathToSaveMacro) #Test this
+    PathToSaveMacro = rf"{WorkingPath}\PsMacros\SaveFile.psmacro"
+    print(PathToSaveMacro)
+    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat", PathToSaveMacro]) #Test this
     #time.sleep(3) probably not needed
 
 def WriteLogFile(ChannelName, Motor1_mid, Motor2_mid):
-    converterConstant = 1.25/1600 #mm per step
+    converterConstant = 1.25/1600 #mm per step; Accuracy: 0.08mm
     stepValue = 320
     stepCounter = 5
     Motor1_max = Motor1_mid + stepCounter * stepValue
@@ -162,7 +159,15 @@ def RunPicoscope():
     sb.call([WorkingPath / "BatchFiles" / "RunMeasurement.bat"])
     time.sleep(4)
 
-channel_list = ["A", "B", "C", "D"]
+##---------------------------------------------------------##
+WorkingPath = pathlib.Path(__file__).parent.resolve()
+print([comport.description for comport in serial.tools.list_ports.comports()])
+with serial.Serial() as ser:
+    ser.baudrate = 115200
+    ser.port = 'COM4'
+    ser.timeout = 1
+
+channel_list = ["A"]
 
 Motor1Values = []
 Motor2Values = []
@@ -181,6 +186,7 @@ input("Press Enter to Start Measuring")
 
 for index, channel in enumerate(channel_list):
     log = WriteLogFile(channel, Motor1Values[index], Motor2Values[index])
+    pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
     log.to_csv(WorkingPath / "Measurements" /  f"{channel}.csv")
     print ("Logs are: ", log)
     for index, row in log.iterrows():
@@ -191,6 +197,5 @@ for index, channel in enumerate(channel_list):
 
 
 
-##TO DO: combine Set Position and Move, (make pandas array for all Positions, numpy arrange, numpy to list,)
-
 #Include writing a log
+

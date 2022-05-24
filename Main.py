@@ -5,6 +5,7 @@ import subprocess as sb
 import numpy as np
 import pandas as pd
 import pathlib 
+import matplotlib.pyplot as plt
 import serial.tools.list_ports
 
 
@@ -128,31 +129,66 @@ def SaveFile(fileName):
     sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat", PathToSaveMacro]) #Test this
     #time.sleep(3) probably not needed
 
-def WriteLogFile(ChannelName, Motor1_mid, Motor2_mid):
-    converterConstant = 1.25/1600 #mm per step; Accuracy: 0.08mm
-    stepValue = 320
-    stepCounter = 5
-    Motor1_max = Motor1_mid + stepCounter * stepValue
-    Motor1_min = Motor1_mid - stepCounter * stepValue
-    Motor1Coordinates = np.arange(Motor1_min, Motor1_max, stepValue).tolist()
-    Motor2_max = Motor2_mid + stepCounter * stepValue
-    Motor2_min = Motor2_mid - stepCounter * stepValue
-    Motor2Coordinates = np.arange(Motor2_min, Motor2_max, stepValue)
-    Motor1Coordinates_list = Motor1Coordinates*len(Motor2Coordinates)
-    Motor2Coordinates_list = []
-    for entries in Motor2Coordinates:
-        for values in Motor1Coordinates:
-            Motor2Coordinates_list.append(entries)
-    #print(len(b_list), len(b), len(a_list), len(a))
-    df = pd.DataFrame({'X Coordinates':Motor1Coordinates_list, 'Y Coordinates' :Motor2Coordinates_list})
-    filename_list = []
-    for index in range(len(df)):
-        filename = ChannelName + "_" + str(index+1) + ".psdata"
-        filename_list.append(filename)    
-    df["X Coordinates in mm"] = df['X Coordinates'].multiply(converterConstant)
-    df["Y Coordinates in mm"] = df['Y Coordinates'].multiply(converterConstant)
-    df["filenames"] = filename_list
-    ######SaveFileAs .csv
+def WriteLogFile(PointsX, PointsY, Resolution = 0.08, RadiusX = 0.5, RadiusY =1):
+    converterConstant = 1.25/1600 #mm per step
+    print(PointsY)
+    PointsX = [converterConstant * i for i in PointsX]
+    PointsY = [converterConstant * i for i in PointsY]
+    print(PointsY)
+    X_Max = max(PointsX) + RadiusX
+    #print("X_Max is: ", X_Max)
+    X_Min = min(PointsX) - RadiusX
+    #print("X_min is: ", X_Min)
+    steps_X = ((X_Max-X_Min) / Resolution ) +1
+    #print(steps_X)
+    X_Values = np.linspace(X_Min, X_Max, num = round(steps_X))
+    #print("X Values are: ", X_Values)
+    Y_Max = max(PointsY) + RadiusY
+    #print("Y_Max is: ", Y_Max)
+    Y_Min = min(PointsY) - RadiusY
+    #print("Y_Min is: ", Y_Min)
+    steps_Y = ((Y_Max-Y_Min) / Resolution) +1
+    Y_Values = np.linspace(Y_Min, Y_Max, num = round(steps_Y))
+    #print("Y Values are: ", Y_Values)
+    xx, yy = np.meshgrid(X_Values, Y_Values)
+    #print("XX is: ", xx, "YY is :", yy.shape)
+    positions = np.vstack([xx.ravel(), yy.ravel()])
+    X_Coords = positions[0].tolist()
+    #print("Length before: ", len(X_Coords))
+    Y_Coords = positions[1].tolist()
+    #print(len(Y_Coords))
+    f = plt.figure(1)
+    plt.plot(X_Coords, Y_Coords, marker='o', color='r', linestyle='none')
+    IdxToRemove = []
+    Filename_list = []
+    for index, (X_Coordinate, Y_Coordinate) in enumerate(zip(X_Coords, Y_Coords)):
+        filename = str(index+1) + ".psdata"
+        Filename_list.append(filename) 
+        for PointX, PointY in zip(PointsX, PointsY):
+            LeftPoint = PointX - RadiusX
+            RightPoint = PointX + RadiusX
+            BottomPoint = PointY - RadiusY
+            UpperPoint = PointY + RadiusY
+            if LeftPoint <= X_Coordinate <= RightPoint and BottomPoint <= Y_Coordinate <= UpperPoint:
+                RemoveNumber = False
+                break
+            else:
+                RemoveNumber = True
+        if RemoveNumber == True:
+            IdxToRemove.append(index)
+    for idx in sorted(IdxToRemove, reverse = True):
+        del X_Coords[idx]
+        del Y_Coords[idx]
+    #print("Length after: ", len(X_Coords))
+    #print("Length after: ", len(Y_Coords))
+    plt.plot(X_Coords, Y_Coords, marker='.', color='k', linestyle='none')
+    g = plt.figure(2)
+    X_CoordsInRevs = [round((1/converterConstant) * i) for i in X_Coords]
+    Y_CoordsInRevs = [round((1/converterConstant) * i) for i in Y_Coords]
+    Filename_list = [str(i+1) + ".psdata" for i, item in enumerate(X_Coords)]
+    plt.plot(X_CoordsInRevs, Y_CoordsInRevs, marker='o', color='k', linestyle='none')
+    plt.show()
+    df = pd.DataFrame({'X Coordinates':X_CoordsInRevs, 'Y Coordinates' :Y_CoordsInRevs, 'X Coordinates in mm' :X_Coords, 'Y Coordinates in mm': Y_Coords, "filenames": Filename_list})
     return df
 
 def RunPicoscope():
@@ -167,7 +203,7 @@ with serial.Serial() as ser:
     ser.port = 'COM4'
     ser.timeout = 1
 
-channel_list = ["A", "B", "C", "D"]
+channel_list = ["A", "B", "C", "D"] ####Modify this
 
 Motor1Values = []
 Motor2Values = []
@@ -184,16 +220,16 @@ print("Motor2Values: ", Motor2Values)
 
 input("Press Enter to Start Measuring")
 
-for index, channel in enumerate(channel_list):
-    log = WriteLogFile(channel, Motor1Values[index], Motor2Values[index])
-    pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
-    log.to_csv(WorkingPath / "Measurements" /  f"{channel}.csv")
-    print ("Logs are: ", log)
-    for index, row in log.iterrows():
-        MoveMotorToPosition(1, row["X Coordinates"])
-        MoveMotorToPosition(2, row["Y Coordinates"])
-        RunPicoscope()
-        SaveFile(row["filenames"])
+
+log = WriteLogFile(Motor1Values, Motor2Values)
+pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
+log.to_csv(WorkingPath / "Measurements" /  "Log.csv")
+print ("Logs are: ", log)
+for index, row in log.iterrows():
+    MoveMotorToPosition(1, row["X Coordinates"])
+    MoveMotorToPosition(2, row["Y Coordinates"])
+    RunPicoscope()
+    SaveFile(row["filenames"])
 
 
 

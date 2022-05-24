@@ -141,14 +141,14 @@ def WriteLogFile(PointsX, PointsY, Resolution = 0.08, RadiusX = 0.5, RadiusY =1)
     #print("X_min is: ", X_Min)
     steps_X = ((X_Max-X_Min) / Resolution ) +1
     #print(steps_X)
-    X_Values = np.linspace(X_Min, X_Max, num = int(steps_X))
+    X_Values = np.linspace(X_Min, X_Max, num = round(steps_X))
     #print("X Values are: ", X_Values)
     Y_Max = max(PointsY) + RadiusY
     #print("Y_Max is: ", Y_Max)
     Y_Min = min(PointsY) - RadiusY
     #print("Y_Min is: ", Y_Min)
     steps_Y = ((Y_Max-Y_Min) / Resolution) +1
-    Y_Values = np.linspace(Y_Min, Y_Max, num = int(steps_Y))
+    Y_Values = np.linspace(Y_Min, Y_Max, num = round(steps_Y))
     #print("Y Values are: ", Y_Values)
     xx, yy = np.meshgrid(X_Values, Y_Values)
     #print("XX is: ", xx, "YY is :", yy.shape)
@@ -203,7 +203,7 @@ with serial.Serial() as ser:
     ser.port = 'COM4'
     ser.timeout = 1
 
-channel_list = ["A"] ####Modify this
+channel_list = ["A", "B", "C", "D"] ####Modify this
 
 Motor1Values = []
 Motor2Values = []

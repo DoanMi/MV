@@ -9,3 +9,4 @@ pip install string is included for all non standard libraries. Rest is already i
   * numpy `pip install numpy`
   * pandas `pip install pandas`
   * pathlib
+  * PicoScopeSDK downloaded from Picoscope webpage

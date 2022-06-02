@@ -7,6 +7,7 @@ import pandas as pd
 import pathlib 
 import matplotlib.pyplot as plt
 import serial.tools.list_ports
+import Helper_Picoscope as pico
 
 
 
@@ -77,11 +78,20 @@ def getPosition(Motor):
     ser.write(message.encode())
     #print(message.encode())
     data = str(ser.read(10))
-    print("Position is: ", data)
-    position = int((data.split("C"))[1].split('\\')[0])
-    #print("Received Message", position)
-    ser.close()
-    return position
+    #print("Position is: ", data)
+
+    #print("_Position is: ", _position)
+    try: 
+        _position = (data.split("C"))[1] #.split('\\')[0]
+        position = int(re.split(r'(?<=\d)\D', _position, maxsplit=1)[0])
+        #print("Position is: ", position)
+        #print("Received Message", position)
+        ser.close()
+        return position
+    except:
+        position = False        
+        ser.close()
+        return position
 
 #Sets Position for Motors to run to
 def SetPosition(Motor, Position):
@@ -129,18 +139,18 @@ def SaveFile(fileName):
     sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat", PathToSaveMacro]) #Test this
     #time.sleep(3) probably not needed
 
-def WriteLogFile(PointsX, PointsY, Resolution = 0.08, RadiusX = 0.5, RadiusY =1):
+def WriteLogFile(PointsX, PointsY, Resolution = 0.1, RadiusX = 0.5, RadiusY =1):
     converterConstant = 1.25/1600 #mm per step
-    print(PointsY)
+    #print(PointsY)
     PointsX = [converterConstant * i for i in PointsX]
     PointsY = [converterConstant * i for i in PointsY]
-    print(PointsY)
+    #print(PointsY)
     X_Max = max(PointsX) + RadiusX
     #print("X_Max is: ", X_Max)
     X_Min = min(PointsX) - RadiusX
     #print("X_min is: ", X_Min)
     steps_X = ((X_Max-X_Min) / Resolution ) +1
-    #print(steps_X)
+    print(steps_X)
     X_Values = np.linspace(X_Min, X_Max, num = round(steps_X))
     #print("X Values are: ", X_Values)
     Y_Max = max(PointsY) + RadiusY
@@ -154,11 +164,11 @@ def WriteLogFile(PointsX, PointsY, Resolution = 0.08, RadiusX = 0.5, RadiusY =1)
     #print("XX is: ", xx, "YY is :", yy.shape)
     positions = np.vstack([xx.ravel(), yy.ravel()])
     X_Coords = positions[0].tolist()
-    #print("Length before: ", len(X_Coords))
+    print("Length before: ", len(X_Coords))
     Y_Coords = positions[1].tolist()
     #print(len(Y_Coords))
-    f = plt.figure(1)
-    plt.plot(X_Coords, Y_Coords, marker='o', color='r', linestyle='none')
+    #f = plt.figure(1)
+    #plt.plot(X_Coords, Y_Coords, marker='o', color='r', linestyle='none')
     IdxToRemove = []
     Filename_list = []
     for index, (X_Coordinate, Y_Coordinate) in enumerate(zip(X_Coords, Y_Coords)):
@@ -179,15 +189,15 @@ def WriteLogFile(PointsX, PointsY, Resolution = 0.08, RadiusX = 0.5, RadiusY =1)
     for idx in sorted(IdxToRemove, reverse = True):
         del X_Coords[idx]
         del Y_Coords[idx]
-    #print("Length after: ", len(X_Coords))
-    #print("Length after: ", len(Y_Coords))
+    print("Length after: ", len(X_Coords))
+    print("Length after: ", len(Y_Coords))
     plt.plot(X_Coords, Y_Coords, marker='.', color='k', linestyle='none')
     g = plt.figure(2)
     X_CoordsInRevs = [round((1/converterConstant) * i) for i in X_Coords]
     Y_CoordsInRevs = [round((1/converterConstant) * i) for i in Y_Coords]
     Filename_list = [str(i+1) + ".psdata" for i, item in enumerate(X_Coords)]
-    plt.plot(X_CoordsInRevs, Y_CoordsInRevs, marker='o', color='k', linestyle='none')
-    plt.show()
+    #plt.plot(X_CoordsInRevs, Y_CoordsInRevs, marker='o', color='k', linestyle='none')
+    #plt.show()
     df = pd.DataFrame({'X Coordinates':X_CoordsInRevs, 'Y Coordinates' :Y_CoordsInRevs, 'X Coordinates in mm' :X_Coords, 'Y Coordinates in mm': Y_Coords, "filenames": Filename_list})
     return df
 
@@ -222,14 +232,28 @@ input("Press Enter to Start Measuring")
 
 
 log = WriteLogFile(Motor1Values, Motor2Values)
+#log["MeansA"] = ""
 pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
 log.to_csv(WorkingPath / "Measurements" /  "Log.csv")
-print ("Logs are: ", log)
+#print ("Logs are: ", log)
+pico.openUnit()
 for index, row in log.iterrows():
+    #tic = time.process_time()
+    print("Point " , index, "out of ", len(log))
     MoveMotorToPosition(1, row["X Coordinates"])
     MoveMotorToPosition(2, row["Y Coordinates"])
-    RunPicoscope()
-    SaveFile(row["filenames"])
+    time.sleep(1)
+    Results  = pico.runMeasurement(1)    
+    for key in Results:
+        #print(key)
+        log.loc[index, key] =Results.get(key) 
+    log.to_csv(WorkingPath / "Measurements" /  "Log.csv")
+    #toc = time.process_time()
+    #print("Time for one Measurement: ", toc-tic)
+    #print(Results)
+    #RunPicoscope()
+    #SaveFile(row["filenames"])
+pico.closeUnit()
 
 
 

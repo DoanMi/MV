@@ -78,9 +78,6 @@ def getPosition(Motor):
     ser.write(message.encode())
     #print(message.encode())
     data = str(ser.read(10))
-    #print("Position is: ", data)
-
-    #print("_Position is: ", _position)
     try: 
         _position = (data.split("C"))[1] #.split('\\')[0]
         position = int(re.split(r'(?<=\d)\D', _position, maxsplit=1)[0])
@@ -217,7 +214,9 @@ channel_list = ["A", "B", "C", "D"] ####Modify this
 
 Motor1Values = []
 Motor2Values = []
-##############get Mid Values 
+
+##---------------------------------------------------------## 
+
 for channel in channel_list:
     print(f"move to Position of highest Amplitude of Channel ", channel )
     input("Press Enter to save Position")
@@ -228,17 +227,19 @@ for channel in channel_list:
 print("Motor1Values: ", Motor1Values)
 print("Motor2Values: ", Motor2Values)
 
-input("Press Enter to Start Measuring")
+##---------------------------------------------------------## 
 
+input("Press Enter to Start Measuring")
 
 log = WriteLogFile(Motor1Values, Motor2Values)
 #log["MeansA"] = ""
 pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
-log.to_csv(WorkingPath / "Measurements" /  "Log.csv")
+LogName = time.strftime("%Y%m%d%H%M") + "_Log.csv"
+log.to_csv(WorkingPath / "Measurements" /  LogName)
 #print ("Logs are: ", log)
 pico.openUnit()
 for index, row in log.iterrows():
-    #tic = time.process_time()
+    tic = time.process_time()
     print("Point " , index, "out of ", len(log))
     MoveMotorToPosition(1, row["X Coordinates"])
     MoveMotorToPosition(2, row["Y Coordinates"])
@@ -247,9 +248,10 @@ for index, row in log.iterrows():
     for key in Results:
         #print(key)
         log.loc[index, key] =Results.get(key) 
-    log.to_csv(WorkingPath / "Measurements" /  "Log.csv")
-    #toc = time.process_time()
-    #print("Time for one Measurement: ", toc-tic)
+    log.to_csv(WorkingPath / "Measurements" /  LogName)
+    toc = time.process_time()
+    TimeToFinish = (len(log)-index) * (toc-tic)
+    print(time.strftime("%Hh%Mmin", time.gmtime(TimeToFinish)), "left")
     #print(Results)
     #RunPicoscope()
     #SaveFile(row["filenames"])

@@ -57,3 +57,5 @@ activates Picoscope unit.
 | PS6000_10V | 9 |
 | PS6000_20V | 10 |
 | PS6000_50V | 11 |
+### *closeUnit*()
+closes currrent Picoscope unit

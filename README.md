@@ -25,7 +25,7 @@ Returns a dataframe with a grid coordinates around the Points defined by `Points
 | X Coordinates | List of X Coordinates in Revolutions (of stepper motor) |
 | Y Coordinates | List of X Coordinates in Revolutions (of stepper motor) |
 | X Coordinates in mm | List of X Coordinates in Millimeters from absolute zero |
-| Y Coordinates in mm | List of X Coordinates in Millimeters from absolute zero |
+| Y Coordinates in mm | List of Y Coordinates in Millimeters from absolute zero |
 | filenames | psdata file from each measurement at each point in the grid. Goes From 0.psdata to n.psadata |
 
 `PointsX`, `PointsY` are lists of coordinates.  

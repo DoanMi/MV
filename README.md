@@ -10,3 +10,4 @@ pip install string is included for all non standard libraries. Rest is already i
   * pandas `pip install pandas`
   * pathlib
   * PicoScopeSDK downloaded from Picoscope webpage
+    * Download SDK Passage from [here](https://www.picotech.com/downloads)

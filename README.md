@@ -33,6 +33,27 @@ Returns a dataframe with a grid coordinates around the Points defined by `Points
 `RadiusX`, `RadiusY` defines distance/2 from each point to edge of grid. 
 ### *setPositioningMode*(Motor = 1 or 2)
 set `Motor` to be positioned by coordinate input in contrast to joystick input.
-### *setJoystickMode*(Motor)
+### *setJoystickMode*(Motor = 1 or 2)
 set `Motor` to be positioned by joystick input in contrast to coordinate input.
+### *setZero*(Motor = 1 or 2)
+set current `Motor` position to zero
 ## Helper Picoscope
+### openUnit(ChannelNumber = 4, ChannelRange = 7)
+activates Picoscope unit.  
+`ChannelNumber` defines number of Channels to record
+`ChannelRange` defines voltage range for the channels  
+#### Range Table
+| Column Name | Description |
+| ------------- | ------------- |
+| PS6000_10MV | 0 |
+| PS6000_100MV | 1 |
+| PS6000_20MV | 2 |
+| PS6000_50MV | 3 |
+| PS6000_200MV | 4 |
+| PS6000_500MV | 5 |
+| PS6000_1V | 6 |
+| PS6000_2V | 7 |
+| PS6000_5V | 8 |
+| PS6000_10V | 9 |
+| PS6000_20V | 10 |
+| PS6000_50V | 11 |

@@ -120,7 +120,8 @@ def MoveMotorToPosition(Motor, newPosition):
     #print(data)
     ser.close()
     while(getPosition(Motor) != newPosition):
-        print(f"Waiting for {Motor}")
+        pass
+        #print(f"Waiting for {Motor}")
     #time.sleep(5)
 
 def SaveFile(fileName):
@@ -147,7 +148,7 @@ def WriteLogFile(PointsX, PointsY, Resolution = 0.1, RadiusX = 0.5, RadiusY =1):
     X_Min = min(PointsX) - RadiusX
     #print("X_min is: ", X_Min)
     steps_X = ((X_Max-X_Min) / Resolution ) +1
-    print(steps_X)
+    #print(steps_X)
     X_Values = np.linspace(X_Min, X_Max, num = round(steps_X))
     #print("X Values are: ", X_Values)
     Y_Max = max(PointsY) + RadiusY
@@ -186,8 +187,8 @@ def WriteLogFile(PointsX, PointsY, Resolution = 0.1, RadiusX = 0.5, RadiusY =1):
     for idx in sorted(IdxToRemove, reverse = True):
         del X_Coords[idx]
         del Y_Coords[idx]
-    print("Length after: ", len(X_Coords))
-    print("Length after: ", len(Y_Coords))
+    #print("Length after: ", len(X_Coords))
+    #print("Length after: ", len(Y_Coords))
     plt.plot(X_Coords, Y_Coords, marker='.', color='k', linestyle='none')
     g = plt.figure(2)
     X_CoordsInRevs = [round((1/converterConstant) * i) for i in X_Coords]
@@ -210,7 +211,11 @@ with serial.Serial() as ser:
     ser.port = 'COM4'
     ser.timeout = 1
 
-channel_list = ["A", "B", "C", "D"] ####Modify this
+ChannelNumber = input("How many channels? (2 or 4)")
+if ChannelNumber == 4:
+    channel_list = ["A", "B", "C", "D"] ####Modify this
+else:
+    channel_list = ["A", "B"]
 
 Motor1Values = []
 Motor2Values = []
@@ -237,14 +242,14 @@ pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True
 LogName = time.strftime("%Y%m%d%H%M") + "_Log.csv"
 log.to_csv(WorkingPath / "Measurements" /  LogName)
 #print ("Logs are: ", log)
-pico.openUnit()
+pico.openUnit(ChannelNumber)
 for index, row in log.iterrows():
     tic = time.process_time()
     print("Point " , index, "out of ", len(log))
     MoveMotorToPosition(1, row["X Coordinates"])
     MoveMotorToPosition(2, row["Y Coordinates"])
     time.sleep(1)
-    Results  = pico.runMeasurement(1)    
+    Results  = pico.runMeasurement(1, ChannelNumber)    
     for key in Results:
         #print(key)
         log.loc[index, key] =Results.get(key) 
@@ -256,7 +261,7 @@ for index, row in log.iterrows():
     #RunPicoscope()
     #SaveFile(row["filenames"])
 pico.closeUnit()
-
+print("We done bois!")
 
 
 #Include writing a log

@@ -19,7 +19,7 @@ status = {}
 
 # Open 6000 series PicoScope
 # Returns handle to chandle for use in future API functions
-def openUnit(ChannelRange = 7):
+def openUnit(ChannelNumber = 4, ChannelRange = 7):
     status["openunit"] = ps.ps6000OpenUnit(ctypes.byref(chandle), None)
     assert_pico_ok(status["openunit"])
 
@@ -46,31 +46,30 @@ def openUnit(ChannelRange = 7):
     chBRange = ChannelRange
     status["setChB"] = ps.ps6000SetChannel(chandle, 1, 1, 2, chBRange, 0, 0)
     assert_pico_ok(status["setChB"])
+    if ChannelNumber == 4: 
+        # Set up channel C
+        # handle = chandle
+        # channel = PS6000_CHANNEL_B = 1
+        # enabled = 1
+        # coupling type = PS6000_DC = 1
+        # range = PS6000_2V = 7
+        # analogue offset = 0 V
+        # bandwidth limiter = PS6000_BW_FULL = 0
+        chCRange = ChannelRange
+        status["setChC"] = ps.ps6000SetChannel(chandle, 2, 1, 2, chCRange, 0, 0)
+        assert_pico_ok(status["setChC"])
 
-    # Set up channel C
-    # handle = chandle
-    # channel = PS6000_CHANNEL_B = 1
-    # enabled = 1
-    # coupling type = PS6000_DC = 1
-    # range = PS6000_2V = 7
-    # analogue offset = 0 V
-    # bandwidth limiter = PS6000_BW_FULL = 0
-    chCRange = ChannelRange
-    status["setChC"] = ps.ps6000SetChannel(chandle, 2, 1, 2, chCRange, 0, 0)
-    assert_pico_ok(status["setChC"])
-
-    # Set up channel D
-    # handle = chandle
-    # channel = PS6000_CHANNEL_B = 1
-    # enabled = 1
-    # coupling type = PS6000_DC = 1
-    # range = PS6000_2V = 7
-    # analogue offset = 0 V
-    # bandwidth limiter = PS6000_BW_FULL = 0
-    chDRange = ChannelRange
-    status["setChD"] = ps.ps6000SetChannel(chandle, 3, 1, 2, chDRange, 0, 0)
-    assert_pico_ok(status["setChD"])
-
+        # Set up channel D
+        # handle = chandle
+        # channel = PS6000_CHANNEL_B = 1
+        # enabled = 1
+        # coupling type = PS6000_DC = 1
+        # range = PS6000_2V = 7
+        # analogue offset = 0 V
+        # bandwidth limiter = PS6000_BW_FULL = 0
+        chDRange = ChannelRange
+        status["setChD"] = ps.ps6000SetChannel(chandle, 3, 1, 2, chDRange, 0, 0)
+        assert_pico_ok(status["setChD"])
 # Set up single trigger
 # handle = chandle
 # enabled = 1
@@ -84,7 +83,7 @@ def setTrigger():
     assert_pico_ok(status["trigger"])
 
 # Set number of pre and post trigger samples to be collected
-def runMeasurement(MeasurementMode, sampleSize = 6250000,  timebase = 4, channelRange = 7):
+def runMeasurement(MeasurementMode, ChannelNumber = 4, sampleSize = 6250000,  timebase = 4, channelRange = 7):
     preTriggerSamples = 0
     postTriggerSamples = sampleSize
     maxSamples = preTriggerSamples + postTriggerSamples
@@ -129,10 +128,11 @@ def runMeasurement(MeasurementMode, sampleSize = 6250000,  timebase = 4, channel
     bufferAMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
     bufferBMax = (ctypes.c_int16 * maxSamples)()
     bufferBMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
-    bufferCMax = (ctypes.c_int16 * maxSamples)()
-    bufferCMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
-    bufferDMax = (ctypes.c_int16 * maxSamples)()
-    bufferDMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
+    if ChannelNumber == 4:
+        bufferCMax = (ctypes.c_int16 * maxSamples)()
+        bufferCMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
+        bufferDMax = (ctypes.c_int16 * maxSamples)()
+        bufferDMin = (ctypes.c_int16 * maxSamples)() # used for downsampling which isn't in the scope of this example
 
     # Set data buffer location for data collection from channel A
     # handle = chandle
@@ -153,12 +153,13 @@ def runMeasurement(MeasurementMode, sampleSize = 6250000,  timebase = 4, channel
     # ratio mode = PS6000_RATIO_MODE_NONE = 0
     status["setDataBuffersB"] = ps.ps6000SetDataBuffers(chandle, 1, ctypes.byref(bufferBMax), ctypes.byref(bufferBMin), maxSamples, 0)
     assert_pico_ok(status["setDataBuffersB"])
+    
+    if ChannelNumber == 4:
+        status["setDataBuffersC"] = ps.ps6000SetDataBuffers(chandle, 2, ctypes.byref(bufferCMax), ctypes.byref(bufferCMin), maxSamples, 0)
+        assert_pico_ok(status["setDataBuffersC"])
 
-    status["setDataBuffersC"] = ps.ps6000SetDataBuffers(chandle, 2, ctypes.byref(bufferCMax), ctypes.byref(bufferCMin), maxSamples, 0)
-    assert_pico_ok(status["setDataBuffersC"])
-
-    status["setDataBuffersD"] = ps.ps6000SetDataBuffers(chandle, 3, ctypes.byref(bufferDMax), ctypes.byref(bufferDMin), maxSamples, 0)
-    assert_pico_ok(status["setDataBuffersD"])
+        status["setDataBuffersD"] = ps.ps6000SetDataBuffers(chandle, 3, ctypes.byref(bufferDMax), ctypes.byref(bufferDMin), maxSamples, 0)
+        assert_pico_ok(status["setDataBuffersD"])
 
     # create overflow loaction
     overflow = ctypes.c_int16()
@@ -181,8 +182,9 @@ def runMeasurement(MeasurementMode, sampleSize = 6250000,  timebase = 4, channel
     # convert ADC counts data to mV
     adc2mVChAMax =  adc2mV(bufferAMax, channelRange, maxADC)
     adc2mVChBMax =  adc2mV(bufferBMax, channelRange, maxADC)
-    adc2mVChCMax =  adc2mV(bufferCMax, channelRange, maxADC)
-    adc2mVChDMax =  adc2mV(bufferDMax, channelRange, maxADC)
+    if ChannelNumber == 4:
+        adc2mVChCMax =  adc2mV(bufferCMax, channelRange, maxADC)
+        adc2mVChDMax =  adc2mV(bufferDMax, channelRange, maxADC)
 
     # Create time data
     
@@ -190,16 +192,27 @@ def runMeasurement(MeasurementMode, sampleSize = 6250000,  timebase = 4, channel
     status["stop"] = ps.ps6000Stop(chandle)
     assert_pico_ok(status["stop"])
     if MeasurementMode == 1: 
-        KeyValues = {
-            "MeansA" : np.mean(adc2mVChAMax), "MeansB" : np.mean(adc2mVChBMax), "MeansC" : np.mean(adc2mVChCMax), "MeansD" : np.mean(adc2mVChDMax),
-            "StdA" : np.std(adc2mVChAMax), "StdB" : np.std(adc2mVChBMax), "StdC" : np.std(adc2mVChCMax), "StdD" : np.std(adc2mVChDMax),
-            "MinA" : np.amin(adc2mVChAMax), "MinB" :  np.amin(adc2mVChBMax), "MinC" :  np.amin(adc2mVChCMax), "MinD" :  np.amin(adc2mVChDMax), 
-            "MaxA" : np.amax(adc2mVChAMax), "MaxB" :  np.amax(adc2mVChBMax), "MaxC" :  np.amax(adc2mVChCMax), "MaxD" :  np.amax(adc2mVChDMax)
-        }
+        if ChannelNumber == 4:
+            KeyValues = {
+                "MeansA" : np.mean(adc2mVChAMax), "MeansB" : np.mean(adc2mVChBMax), "MeansC" : np.mean(adc2mVChCMax), "MeansD" : np.mean(adc2mVChDMax),
+                "StdA" : np.std(adc2mVChAMax), "StdB" : np.std(adc2mVChBMax), "StdC" : np.std(adc2mVChCMax), "StdD" : np.std(adc2mVChDMax),
+                "MinA" : np.amin(adc2mVChAMax), "MinB" :  np.amin(adc2mVChBMax), "MinC" :  np.amin(adc2mVChCMax), "MinD" :  np.amin(adc2mVChDMax), 
+                "MaxA" : np.amax(adc2mVChAMax), "MaxB" :  np.amax(adc2mVChBMax), "MaxC" :  np.amax(adc2mVChCMax), "MaxD" :  np.amax(adc2mVChDMax)
+            }
+        else:
+            KeyValues = {
+                "MeansA" : np.mean(adc2mVChAMax), "MeansB" : np.mean(adc2mVChBMax), 
+                "StdA" : np.std(adc2mVChAMax), "StdB" : np.std(adc2mVChBMax), 
+                "MinA" : np.amin(adc2mVChAMax), "MinB" :  np.amin(adc2mVChBMax), 
+                "MaxA" : np.amax(adc2mVChAMax), "MaxB" :  np.amax(adc2mVChBMax), 
+            }
         return KeyValues
     if MeasurementMode == 0:
         time = np.linspace(0, (cmaxSamples.value -1) * timeIntervalns.value, cmaxSamples.value)
-        df = pd.DataFrame({'ValuesA': adc2mVChAMax, 'ValuesB' : adc2mVChBMax, 'ValuesC' : adc2mVChCMax, 'ValuesD' : adc2mVChDMax, "Time" : time})
+        if ChannelNumber == 4:
+            df = pd.DataFrame({'ValuesA': adc2mVChAMax, 'ValuesB' : adc2mVChBMax, 'ValuesC' : adc2mVChCMax, 'ValuesD' : adc2mVChDMax, "Time" : time})
+        else:
+            df = pd.DataFrame({'ValuesA': adc2mVChAMax, 'ValuesB' : adc2mVChBMax, "Time" : time})
         return df
 
     # plot data from channel A and B

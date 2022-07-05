@@ -38,7 +38,7 @@ set `Motor` to be positioned by joystick input in contrast to coordinate input.
 ### *setZero*(Motor = 1 or 2)
 set current `Motor` position to zero
 ## Helper Picoscope
-### openUnit(ChannelNumber = 4, ChannelRange = 7)
+### *openUnit*(ChannelNumber = 4, ChannelRange = 7)
 activates Picoscope unit.  
 `ChannelNumber` defines number of Channels to record
 `ChannelRange` defines voltage range for the channels  

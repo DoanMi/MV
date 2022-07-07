@@ -20,7 +20,7 @@ Moves `Motor` to given `newPosition`.
 Returns the current Position of the `Motor` as number of steps.
 ### *WriteLogFile*(PointsX, PointsY, Resolution = 0.1, RadiusX = 0.5, RadiusY =1)
 Returns a dataframe with a grid coordinates around the Points defined by `PointsX` and `PointsY`. The dataframe columns are as follows:  
-| Column Name | Description |
+| `Argument` | Description |
 | ------------- | ------------- |
 | X Coordinates | List of X Coordinates in Revolutions (of stepper motor) |
 | Y Coordinates | List of X Coordinates in Revolutions (of stepper motor) |

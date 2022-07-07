@@ -43,7 +43,7 @@ activates Picoscope unit.
 `ChannelNumber` defines number of Channels to record
 `ChannelRange` defines voltage range for the channels  
 #### Range Table
-| Column Name | Description |
+| Voltage Range | `ChannelRange` |
 | ------------- | ------------- |
 | PS6000_10MV | 0 |
 | PS6000_100MV | 1 |

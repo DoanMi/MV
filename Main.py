@@ -134,8 +134,8 @@ def SaveFile(fileName):
     f.close()
     PathToSaveMacro = rf"{WorkingPath}\PsMacros\SaveFile.psmacro"
     print(PathToSaveMacro)
-    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat", PathToSaveMacro]) #Test this
-    #time.sleep(3) probably not needed
+    sb.call([WorkingPath / "BatchFiles" / "Run_SaveMacro.bat", PathToSaveMacro]) 
+    time.sleep(3) 
 
 def WriteLogFile(PointsX, PointsY, Resolution = 0.1, RadiusX = 0.5, RadiusY =1):
     converterConstant = 1.25/1600 #mm per step
@@ -206,6 +206,7 @@ def RunPicoscope():
 ##---------------------------------------------------------##
 WorkingPath = pathlib.Path(__file__).parent.resolve()
 print([comport.description for comport in serial.tools.list_ports.comports()])
+
 with serial.Serial() as ser:
     ser.baudrate = 115200
     ser.port = 'COM4'
@@ -213,15 +214,15 @@ with serial.Serial() as ser:
 
 ChannelNumber = input("How many channels? (2 or 4)")
 if ChannelNumber == 4:
-    channel_list = ["A", "B", "C", "D"] ####Modify this
+    channel_list = ["A", "B", "C", "D"]
 else:
     channel_list = ["A", "B"]
 
-Motor1Values = []
-Motor2Values = []
+MeasurementMode = int(input("Choose measurement mode: 1 for raw measurement resulting in psdata files. 2 for quick measurement resulting in a log with characteristic values"))
 
 ##---------------------------------------------------------## 
-
+Motor1Values = []
+Motor2Values = []
 for channel in channel_list:
     print(f"move to Position of highest Amplitude of Channel ", channel )
     input("Press Enter to save Position")
@@ -237,31 +238,43 @@ print("Motor2Values: ", Motor2Values)
 input("Press Enter to Start Measuring")
 
 log = WriteLogFile(Motor1Values, Motor2Values)
-#log["MeansA"] = ""
 pathlib.Path(WorkingPath / "Measurements").mkdir(parents = True, exist_ok = True)
 LogName = time.strftime("%Y%m%d%H%M") + "_Log.csv"
 log.to_csv(WorkingPath / "Measurements" /  LogName)
-#print ("Logs are: ", log)
-pico.openUnit(ChannelNumber)
-for index, row in log.iterrows():
-    tic = time.process_time()
-    print("Point " , index, "out of ", len(log))
-    MoveMotorToPosition(1, row["X Coordinates"])
-    MoveMotorToPosition(2, row["Y Coordinates"])
-    time.sleep(1)
-    Results  = pico.runMeasurement(1, ChannelNumber)    
-    for key in Results:
-        #print(key)
-        log.loc[index, key] =Results.get(key) 
-    log.to_csv(WorkingPath / "Measurements" /  LogName)
-    toc = time.process_time()
-    TimeToFinish = (len(log)-index) * (toc-tic)
-    print(time.strftime("%Hh%Mmin", time.gmtime(TimeToFinish)), "left")
-    #print(Results)
-    #RunPicoscope()
-    #SaveFile(row["filenames"])
-pico.closeUnit()
-print("We done bois!")
+
+print("MeasurementMode is ", MeasurementMode)
+if MeasurementMode == 1:
+    for index, row in log.iterrows():
+        print("Point " , index, "out of ", len(log))
+        MoveMotorToPosition(1, row["X Coordinates"])
+        MoveMotorToPosition(2, row["Y Coordinates"])
+        RunPicoscope()
+        SaveFile(row["filenames"])
+    print("We done bois!")
+
+if MeasurementMode == 2:
+    pico.openUnit(ChannelNumber)
+    for index, row in log.iterrows():
+        tic = time.process_time()
+        print("Point " , index, "out of ", len(log))
+        MoveMotorToPosition(1, row["X Coordinates"])
+        MoveMotorToPosition(2, row["Y Coordinates"])
+        time.sleep(1)
+        Results  = pico.runMeasurement(1, ChannelNumber)    
+        for key in Results:
+            #print(key)
+            log.loc[index, key] =Results.get(key) 
+        log.to_csv(WorkingPath / "Measurements" /  LogName)
+        toc = time.process_time()
+        TimeToFinish = (len(log)-index) * (toc-tic)
+        print(time.strftime("%Hh%Mmin", time.gmtime(TimeToFinish)), "left")
+        #print(Results)
+        #RunPicoscope()
+        #SaveFile(row["filenames"])
+    pico.closeUnit()
+
+
+
 
 
 #Include writing a log
